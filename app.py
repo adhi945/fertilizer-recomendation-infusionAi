@@ -11,8 +11,8 @@ from groq import Groq
 load_dotenv()
 
 # API keys from Streamlit Secrets
-OPENWEATHER_API_KEY = st.secrets["d800146b93a2ecf2ba158377ed11d44a"]
-GROQ_API_KEY = st.secrets["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"]
+OPENWEATHER_API_KEY = st.secrets["OPENWEATHER_API_KEY"]
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 
 # Inject CSS
 def local_css(file_name):
