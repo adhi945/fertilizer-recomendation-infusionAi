@@ -1,0 +1,36 @@
+body {
+    background: linear-gradient(135deg, #d4fc79, #96e6a1);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+}
+
+@keyframes gradientBG {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
+}
+
+.stApp {
+    font-family: 'Poppins', sans-serif;
+    color: #084c02;
+}
+
+.stButton>button {
+    background-color: #5cb85c;
+    color: white;
+    border-radius: 12px;
+    padding: 10px 24px;
+    font-size: 18px;
+    font-weight: bold;
+    transition: 0.4s ease;
+}
+
+.stButton>button:hover {
+    background-color: #449d44;
+    transform: scale(1.05);
+}
+
+.stNumberInput input, .stSelectbox>div>div {
+    background-color: #e6ffe6;
+    font-weight: 500;
+}
