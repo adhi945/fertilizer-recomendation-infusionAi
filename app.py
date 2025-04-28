@@ -10,7 +10,7 @@ from groq import Groq
 # Load environment variables
 load_dotenv()
 
-# API keys (fetched from Streamlit secrets)
+# API keys from Streamlit Secrets
 OPENWEATHER_API_KEY = st.secrets["OPENWEATHER_API_KEY"]
 GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 
@@ -31,9 +31,9 @@ def load_files():
         model = pickle.load(f)
     return scaler, label_encoder, feature_encoders, model
 
-# Fetch weather from OpenWeather API
-def fetch_weather(city):
-    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHER_API_KEY}&units=metric"
+# Fetch weather from OpenWeather using Latitude & Longitude
+def fetch_weather(lat, lon):
+    url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}&units=metric"
     response = requests.get(url)
     data = response.json()
     if response.status_code == 200:
@@ -45,9 +45,9 @@ def fetch_weather(city):
         return None, None
 
 # Generate fertilizer remark using Groq LLM
-def generate_remark(fertilizer_name):
+def generate_remark(fertilizer_name, area_name):
     client = Groq(api_key=GROQ_API_KEY)
-    prompt = f"Give a detailed agricultural advice for the fertilizer: {fertilizer_name}. Focus on why, when, and how to use it for farmers."
+    prompt = f"Act as a smart agricultural advisor. Give detailed fertilizer advice for {fertilizer_name} usage in {area_name}. Explain why, when, and how to apply it for maximum crop yield."
     chat_completion = client.chat.completions.create(
         model="mixtral-8x7b-32768",
         messages=[{"role": "user", "content": prompt}]
@@ -58,27 +58,33 @@ def generate_remark(fertilizer_name):
 def main():
     local_css("style.css")
 
-    st.title("🚜 InfusionAI 3.0 — Smart Fertilizer Advisor")
-    st.write("Empowering farmers with AI-driven fertilizer recommendations. 🌾")
+    st.title("🚜 InfusionAI 3.0 — Location-based Fertilizer Advisor")
+    st.write("Predicts the best fertilizer using your location and farm conditions. 🌾")
 
     scaler, label_encoder, feature_encoders, model = load_files()
 
-    city = st.text_input('Enter your City Name')
+    with st.form(key="fertilizer_form"):
+        area_name = st.text_input('Enter Area Name')
+        latitude = st.number_input('Latitude', format="%.6f")
+        longitude = st.number_input('Longitude', format="%.6f")
 
-    if city:
-        temperature, humidity = fetch_weather(city)
-        if temperature is not None:
-            st.success(f"Weather fetched successfully: {temperature}°C, {humidity}% humidity")
+        soil_type = st.selectbox('Soil Type', feature_encoders['Soil Type'].classes_)
+        crop_type = st.selectbox('Crop Type', feature_encoders['Crop Type'].classes_)
 
-            moisture = st.number_input('Moisture (%)', min_value=0.0, max_value=100.0, value=30.0)
-            soil_type = st.selectbox('Soil Type', feature_encoders['Soil Type'].classes_)
-            crop_type = st.selectbox('Crop Type', feature_encoders['Crop Type'].classes_)
+        moisture = st.number_input('Moisture (%)', min_value=0.0, max_value=100.0, value=30.0)
+        nitrogen = st.number_input('Nitrogen Level (N)', min_value=0.0, max_value=100.0, value=20.0)
+        phosphorus = st.number_input('Phosphorus Level (P)', min_value=0.0, max_value=100.0, value=30.0)
+        potassium = st.number_input('Potassium Level (K)', min_value=0.0, max_value=100.0, value=40.0)
 
-            nitrogen = st.number_input('Nitrogen Level (N)', min_value=0.0, max_value=100.0, value=20.0)
-            phosphorus = st.number_input('Phosphorus Level (P)', min_value=0.0, max_value=100.0, value=30.0)
-            potassium = st.number_input('Potassium Level (K)', min_value=0.0, max_value=100.0, value=40.0)
+        submit_button = st.form_submit_button(label="🌟 Recommend Fertilizer")
 
-            if st.button('🌟 Recommend Fertilizer'):
+    if submit_button:
+        if latitude and longitude:
+            temperature, humidity = fetch_weather(latitude, longitude)
+            if temperature is not None:
+                st.success(f"Weather at {area_name}: {temperature}°C, {humidity}% humidity")
+
+                # Prepare Input
                 soil_encoded = feature_encoders['Soil Type'].transform([soil_type])[0]
                 crop_encoded = feature_encoders['Crop Type'].transform([crop_type])[0]
 
@@ -92,10 +98,15 @@ def main():
                 prediction_encoded = model.predict(input_scaled)
                 prediction = label_encoder.inverse_transform(prediction_encoded)[0]
 
-                remark = generate_remark(prediction)
+                # Get AI Remark
+                remark = generate_remark(prediction, area_name)
 
                 st.success(f"🎯 Recommended Fertilizer: **{prediction}**")
-                st.info(f"📝 Remark: {remark}")
+                st.info(f"📝 Remark for {area_name}: {remark}")
+            else:
+                st.error("Could not fetch weather details. Please check Latitude and Longitude.")
+        else:
+            st.error("Please provide valid Latitude and Longitude.")
 
 if __name__ == '__main__':
     main()
