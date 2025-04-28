@@ -8,11 +8,11 @@ from dotenv import load_dotenv
 from groq import Groq
 
 # Load environment variables
-load_dotenv()sss
+load_dotenv()
 
-# API keys
-OPENWEATHER_API_KEY = st.secrets["d800146b93a2ecf2ba158377ed11d44a"]
-GROQ_API_KEY = st.secrets["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"]
+# API keys (fetched from Streamlit secrets)
+OPENWEATHER_API_KEY = st.secrets["OPENWEATHER_API_KEY"]
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 
 # Inject CSS
 def local_css(file_name):
@@ -31,7 +31,7 @@ def load_files():
         model = pickle.load(f)
     return scaler, label_encoder, feature_encoders, model
 
-# Fetch weather
+# Fetch weather from OpenWeather API
 def fetch_weather(city):
     url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHER_API_KEY}&units=metric"
     response = requests.get(url)
@@ -44,7 +44,7 @@ def fetch_weather(city):
         st.error(f"Error fetching weather: {data.get('message', 'Unknown error')}")
         return None, None
 
-# Generate remarks using Groq
+# Generate fertilizer remark using Groq LLM
 def generate_remark(fertilizer_name):
     client = Groq(api_key=GROQ_API_KEY)
     prompt = f"Give a detailed agricultural advice for the fertilizer: {fertilizer_name}. Focus on why, when, and how to use it for farmers."
@@ -54,7 +54,7 @@ def generate_remark(fertilizer_name):
     )
     return chat_completion.choices[0].message.content
 
-# Main App
+# Main Streamlit App
 def main():
     local_css("style.css")
 
